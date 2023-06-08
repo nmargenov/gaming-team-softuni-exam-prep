@@ -2,26 +2,18 @@ const bcrypt = require('bcrypt');
 
 const User = require("../models/User");
 
-function findUsername(username){
-    return User.findOne({username});
-}
-
-function findEmail(email){
-    return User.findOne({email});
-}
-
 async function register(username,email,password,rePassword){
     const existingUsername = await findUsername(username);
     const existingEmail = await findEmail(email);
-
+    
     if(existingUsername){
         throw new Error('Username is already in use!');        
     }
-
+    
     if(existingEmail){
         throw new Error('Email is already in use!');        
     }
-
+    
     if(password.length<4){
         throw new Error('Password must be atleast 4 characters long!');
     }
@@ -31,14 +23,38 @@ async function register(username,email,password,rePassword){
     }
 
     const hashPass = await bcrypt.hash(password,10);
-
+    
     const user = {
         username,
         email,
         password:hashPass
     };
-
+    
     return User.create(user);
 }
 
-module.exports = {register}
+async function login(email,password){
+    const user = await findEmail(email);
+
+    if(!user){
+        throw new Error('Email or password don\'t match!');
+    }
+
+    const isValidPassword = await bcrypt.compare(password,user.password);
+
+    if(!isValidPassword){
+        throw new Error('Email or password don\'t match!');
+    }
+
+    return user;
+}
+
+function findUsername(username){
+    return User.findOne({username});
+}
+
+function findEmail(email){
+    return User.findOne({email});
+}
+
+module.exports = {register,login}
