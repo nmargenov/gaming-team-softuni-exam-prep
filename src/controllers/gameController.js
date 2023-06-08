@@ -1,5 +1,6 @@
 const { createGame, getAllGames, getGameById } = require('../managers/gameManager');
 const { mustBeAuth } = require('../middlewares/authMiddleware');
+const { optionsGenerator } = require('../utils/utils');
 
 const router = require('express').Router();
 
@@ -51,6 +52,28 @@ router.get('/:gameId/details',async(req,res)=>{
 
         
         res.status(302).render('games/details',{game,isOwner,isLogged});
+    }catch(err){
+        res.status(404).render('404');
+    }
+});
+
+router.get('/:gameId/edit',mustBeAuth,async(req,res)=>{
+    const gameId = req.params.gameId;
+    const loggedUser = req.user._id;
+
+    try{
+        const game = await getGameById(gameId).lean();
+        if(!game){
+            throw new Error();
+        }
+        if(game.owner !=loggedUser){
+            throw new Error();
+        }
+
+        const options = optionsGenerator(game.platform);
+
+        res.status(302).render('games/edit',{game,options});
+
     }catch(err){
         res.status(404).render('404');
     }

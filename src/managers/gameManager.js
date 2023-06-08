@@ -34,6 +34,8 @@ function createGame(platform,name,imageUrl,price,genre,description,owner){
 
 }
 
+
+
 function getGameById(gameId){
     return Game.findById(gameId);
 }
