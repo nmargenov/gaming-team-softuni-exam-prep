@@ -33,11 +33,35 @@ function createGame(platform,name,imageUrl,price,genre,description,owner){
     return Game.create(game);
 
 }
+function editGameById(gameId,platform,name,imageUrl,price,genre,description){
+    if(!platforms.includes(platform)){
+        throw new Error("Invalid platform!");
+    }
 
+    if(!pattern.test(imageUrl)){
+        throw new Error('Invalid image URL!');
+    }
+    
+    if(price<0){
+        throw new Error('Price must be a positive number!');
+    }
+
+    const game = {
+        platform,
+        name,
+        imageUrl,
+        price,
+        genre,
+        description
+    }
+
+    return Game.findByIdAndUpdate(gameId,game,{runValidators:true});
+
+}
 
 
 function getGameById(gameId){
     return Game.findById(gameId);
 }
 
-module.exports = {createGame,getAllGames,getGameById}
+module.exports = {createGame,getAllGames,getGameById,editGameById}
