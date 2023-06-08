@@ -1,4 +1,4 @@
-const { createGame } = require('../managers/gameManager');
+const { createGame, getAllGames } = require('../managers/gameManager');
 const { mustBeAuth } = require('../middlewares/authMiddleware');
 
 const router = require('express').Router();
@@ -28,8 +28,12 @@ router.post('/create',mustBeAuth,async(req,res)=>{
     }
 });
 
-router.get('/all',(req,res)=>{
-    res.status(302).render('games/catalog');
+router.get('/all',async (req,res)=>{
+    const games = await getAllGames().lean();
+
+    const hasGames = games.length>0;
+
+    res.status(302).render('games/catalog',{hasGames,games});
 });
 
 module.exports = router;

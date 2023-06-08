@@ -3,6 +3,10 @@ const Game = require("../models/Game");
 const platforms = ["PC","Nintendo","PS4","PS5","XBOX"];
 const pattern = /^https?:\/\//;
 
+function getAllGames(){
+    return Game.find();
+}
+
 function createGame(platform,name,imageUrl,price,genre,description,owner){
     if(!platforms.includes(platform)){
         throw new Error("Invalid platform!");
@@ -30,4 +34,4 @@ function createGame(platform,name,imageUrl,price,genre,description,owner){
 
 }
 
-module.exports = {createGame}
+module.exports = {createGame,getAllGames}
