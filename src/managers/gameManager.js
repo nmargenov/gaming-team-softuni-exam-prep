@@ -34,4 +34,8 @@ function createGame(platform,name,imageUrl,price,genre,description,owner){
 
 }
 
-module.exports = {createGame,getAllGames}
+function getGameById(gameId){
+    return Game.findById(gameId);
+}
+
+module.exports = {createGame,getAllGames,getGameById}

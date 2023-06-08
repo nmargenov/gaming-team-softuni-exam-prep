@@ -1,4 +1,4 @@
-const { createGame, getAllGames } = require('../managers/gameManager');
+const { createGame, getAllGames, getGameById } = require('../managers/gameManager');
 const { mustBeAuth } = require('../middlewares/authMiddleware');
 
 const router = require('express').Router();
@@ -23,7 +23,6 @@ router.post('/create',mustBeAuth,async(req,res)=>{
         res.redirect('/games/all');
     }catch(err){
         const error = err.message;
-        console.log(error);
         res.render('games/create',{error,name,imageUrl,price,genre,description});
     }
 });
@@ -34,6 +33,27 @@ router.get('/all',async (req,res)=>{
     const hasGames = games.length>0;
 
     res.status(302).render('games/catalog',{hasGames,games});
+});
+
+router.get('/:gameId/details',async(req,res)=>{
+    const gameId = req.params.gameId;
+    const loggedUser = req.user?._id;
+    
+    
+    try{
+        const game = await getGameById(gameId).lean();
+        if(!game){
+            throw new Error();
+        }
+
+        const isLogged = loggedUser!= undefined;
+        const isOwner = loggedUser == game.owner;
+
+        
+        res.status(302).render('games/details',{game,isOwner,isLogged});
+    }catch(err){
+        res.status(404).render('404');
+    }
 });
 
 module.exports = router;
