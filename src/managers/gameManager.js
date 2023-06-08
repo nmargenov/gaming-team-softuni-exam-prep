@@ -59,9 +59,13 @@ function editGameById(gameId,platform,name,imageUrl,price,genre,description){
 
 }
 
+function deleteGameById(gameId){
+    return Game.findByIdAndDelete(gameId);
+}
+
 
 function getGameById(gameId){
     return Game.findById(gameId);
 }
 
-module.exports = {createGame,getAllGames,getGameById,editGameById}
+module.exports = {createGame,getAllGames,getGameById,editGameById,deleteGameById}

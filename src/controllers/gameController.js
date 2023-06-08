@@ -1,4 +1,4 @@
-const { createGame, getAllGames, getGameById, editGameById } = require('../managers/gameManager');
+const { createGame, getAllGames, getGameById, editGameById, deleteGameById } = require('../managers/gameManager');
 const { mustBeAuth } = require('../middlewares/authMiddleware');
 const { optionsGenerator } = require('../utils/utils');
 
@@ -109,6 +109,27 @@ router.post('/:gameId/edit',mustBeAuth,async(req,res)=>{
         const error = err.message;
         const options = optionsGenerator(platform);
         res.render(`games/edit`,{error,game,options});
+    }
+});
+
+router.get('/:gameId/delete',mustBeAuth,async(req,res)=>{
+    const gameId = req.params.gameId;
+    const loggedUser = req.user._id;
+
+    try{
+        const game = await getGameById(gameId);
+        if(!game){
+            throw new Error('Invalid game ID!');
+        }
+        if(game.owner !=loggedUser){
+            throw new Error('Invalid owner!');
+        }
+
+        await deleteGameById(gameId);
+
+        res.redirect('/');
+    }catch(err){
+        res.status(404).render('404');
     }
 });
 
