@@ -11,7 +11,8 @@ router.post('/login',async(req,res)=>{
     const password = req.body.password.trim();
 
     try{
-        const user = await login(email,password);
+        const token = await login(email,password);
+        res.cookie('auth',token);
         res.redirect('/');
     }catch(err){
         const error = err.message;
@@ -31,7 +32,8 @@ router.post('/register',async (req,res)=>{
     const rePassword = req.body.rePassword.trim();
 
     try{
-        await register(username,email,password,rePassword);
+        const token = await register(username,email,password,rePassword);
+        res.cookie('auth',token);
         res.redirect('/');
     }catch(err){
         const error = err.message;
