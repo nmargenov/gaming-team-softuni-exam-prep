@@ -63,9 +63,13 @@ function deleteGameById(gameId){
     return Game.findByIdAndDelete(gameId);
 }
 
+function buyGame(gameId,buyerId){
+    return Game.findByIdAndUpdate(gameId,{$push:{bougthBy:buyerId}});
+}
+
 
 function getGameById(gameId){
     return Game.findById(gameId);
 }
 
-module.exports = {createGame,getAllGames,getGameById,editGameById,deleteGameById}
+module.exports = {createGame,getAllGames,getGameById,editGameById,deleteGameById,buyGame}

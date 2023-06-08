@@ -1,85 +1,90 @@
-const { createGame, getAllGames, getGameById, editGameById, deleteGameById } = require('../managers/gameManager');
+const { checkIfUserHasBoughtTheGame } = require('../../../Cubicle-Users-Mongoose-Accessories-Softuni/src/managers/cubeManager');
+const { createGame, getAllGames, getGameById, editGameById, deleteGameById, buyGame } = require('../managers/gameManager');
 const { mustBeAuth } = require('../middlewares/authMiddleware');
 const { optionsGenerator } = require('../utils/utils');
 
 const router = require('express').Router();
 
-router.get('/create',mustBeAuth,(req,res)=>{
+router.get('/create', mustBeAuth, (req, res) => {
     res.status(302).render('games/create');
 });
 
-router.post('/create',mustBeAuth,async(req,res)=>{
+router.post('/create', mustBeAuth, async (req, res) => {
     const platform = req.body.platform;
     const name = req.body.name.trim();
     const imageUrl = req.body.imageUrl.trim();
     const price = req.body.price.trim();
     const genre = req.body.genre.trim();
     const description = req.body.description.trim();
-    
+
     const owner = req.user._id;
 
-    try{
-        await createGame(platform,name,imageUrl,price,genre,description,owner);
+    try {
+        await createGame(platform, name, imageUrl, price, genre, description, owner);
 
         res.redirect('/games/all');
-    }catch(err){
+    } catch (err) {
         const error = err.message;
-        res.render('games/create',{error,name,imageUrl,price,genre,description});
+        res.render('games/create', { error, name, imageUrl, price, genre, description });
     }
 });
 
-router.get('/all',async (req,res)=>{
+router.get('/all', async (req, res) => {
     const games = await getAllGames().lean();
 
-    const hasGames = games.length>0;
+    const hasGames = games.length > 0;
 
-    res.status(302).render('games/catalog',{hasGames,games});
+    res.status(302).render('games/catalog', { hasGames, games });
 });
 
-router.get('/:gameId/details',async(req,res)=>{
+router.get('/:gameId/details', async (req, res) => {
     const gameId = req.params.gameId;
     const loggedUser = req.user?._id;
-    
-    
-    try{
+
+
+    try {
         const game = await getGameById(gameId).lean();
-        if(!game){
+        if (!game) {
             throw new Error();
         }
-
-        const isLogged = loggedUser!= undefined;
+        let hasBought;
+        const isLogged = loggedUser != undefined;
         const isOwner = loggedUser == game.owner;
+        if (loggedUser) {
+            hasBought = checkIfUserHasBoughtTheGame(game.bougthBy, loggedUser);
+        }
 
-        
-        res.status(302).render('games/details',{game,isOwner,isLogged});
-    }catch(err){
+        const canBuy = !hasBought && !isOwner && loggedUser;
+
+        res.status(302).render('games/details', { game, isOwner, canBuy, isLogged, hasBought });
+    } catch (err) {
         res.status(404).render('404');
     }
 });
 
-router.get('/:gameId/edit',mustBeAuth,async(req,res)=>{
+router.get('/:gameId/edit', mustBeAuth, async (req, res) => {
     const gameId = req.params.gameId;
     const loggedUser = req.user._id;
 
-    try{
+    try {
         const game = await getGameById(gameId).lean();
-        if(!game){
+        if (!game) {
             throw new Error();
         }
-        if(game.owner !=loggedUser){
+        if (game.owner != loggedUser) {
             throw new Error();
         }
 
         const options = optionsGenerator(game.platform);
 
-        res.status(302).render('games/edit',{game,options});
+        res.status(302).render('games/edit', { game, options });
 
-    }catch(err){
+    } catch (err) {
         res.status(404).render('404');
     }
 });
 
-router.post('/:gameId/edit',mustBeAuth,async(req,res)=>{
+router.post('/:gameId/edit', mustBeAuth, async (req, res) => {
     const platform = req.body.platform;
     const name = req.body.name.trim();
     const imageUrl = req.body.imageUrl.trim();
@@ -88,47 +93,72 @@ router.post('/:gameId/edit',mustBeAuth,async(req,res)=>{
     const description = req.body.description.trim();
 
     const game = {
-        name,imageUrl,price,genre,description
+        name, imageUrl, price, genre, description
     }
-    
+
     const loggedUser = req.user._id;
     const gameId = req.params.gameId;
-    try{
+    try {
         const game = await getGameById(gameId);
-        if(!game){
+        if (!game) {
             throw new Error('Invalid game ID!');
         }
-        if(game.owner !=loggedUser){
+        if (game.owner != loggedUser) {
             throw new Error('Invalid owner!');
         }
 
-        await editGameById(gameId,platform,name,imageUrl,price,genre,description);
+        await editGameById(gameId, platform, name, imageUrl, price, genre, description);
 
         res.redirect(`/games/${game._id}/details`);
-    }catch(err){
+    } catch (err) {
         const error = err.message;
         const options = optionsGenerator(platform);
-        res.render(`games/edit`,{error,game,options});
+        res.render(`games/edit`, { error, game, options });
     }
 });
 
-router.get('/:gameId/delete',mustBeAuth,async(req,res)=>{
+router.get('/:gameId/delete', mustBeAuth, async (req, res) => {
     const gameId = req.params.gameId;
     const loggedUser = req.user._id;
 
-    try{
+    try {
         const game = await getGameById(gameId);
-        if(!game){
+        if (!game) {
             throw new Error('Invalid game ID!');
         }
-        if(game.owner !=loggedUser){
+        if (game.owner != loggedUser) {
             throw new Error('Invalid owner!');
         }
 
         await deleteGameById(gameId);
 
         res.redirect('/');
-    }catch(err){
+    } catch (err) {
+        res.status(404).render('404');
+    }
+});
+
+router.get('/:gameId/buy', mustBeAuth, async (req, res) => {
+    const gameId = req.params.gameId;
+    const loggedUser = req.user._id;
+
+    try {
+        const game = await getGameById(gameId);
+        if (!game) {
+            throw new Error('Invalid game ID!');
+        }
+        if (game.owner == loggedUser) {
+            throw new Error('You cannot buy your own game!');
+        }
+
+        if (checkIfUserHasBoughtTheGame(game.bougthBy, loggedUser)) {
+            throw new Error('You cannot buy the same game twice!');
+        }
+
+        await buyGame(gameId, loggedUser);
+
+        res.redirect(`/games/${gameId}/details`);
+    } catch (err) {
         res.status(404).render('404');
     }
 });
